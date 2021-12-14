@@ -1,4 +1,4 @@
-function camCon() constructor {
+function betterCam() constructor {
 	camID = camera_create();
 	
 	static getCamID = function() {
