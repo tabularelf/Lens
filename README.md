@@ -20,6 +20,10 @@ While most of it is pretty much plug in play (without having to supply CameraID)
 
 Returns: an array that contains the results from `.getViewSpeedX()` and `.getViewSpeedY()`
 
+## `.getCameraID()`
+
+Returns: CameraID
+
 ## `.setViewCam([view_camera])`
 
 Basically the same as `view_camera[view_num] = camID`. but internally tracks the cameraID for when `.free()` is called.
