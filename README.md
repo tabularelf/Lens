@@ -14,6 +14,8 @@ cam.setViewPos(32,32).setViewSize(1280,720).apply();
   
 # Methods
 
+While most of it is pretty much plug in play (without having to supply CameraID), there's a few extra methods included.
+
 ## `.getViewSpeed()`
 
 Returns: an array that contains the results from `.getViewSpeedX()` and `.getViewSpeedY()`
