@@ -1,7 +1,7 @@
 # betterCam
 Camera Constructor alternative for GameMaker Studio 2.3.2+.
 
-This is just a drop in for most of the `camera_*` functions presented in GameMaker Studio 2 as methods via a constructor. Via `.camelCase`
+This is just a drop in for most of the `camera_*` functions presented in GameMaker Studio 2 as methods via a constructor, as `.camelCase()`
 <pr>It also outright removes having to supply a cameraID for every method. Leaving it down to just providing the arguments.
 <pr>Most of the methods are chainable as well.
 
