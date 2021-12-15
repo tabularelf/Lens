@@ -9,7 +9,7 @@ This is just a drop in for most of the `camera_*` functions presented in GameMak
 ```gml
 // Creates a new betterCam instance. Each instance carries its own cameraID.
 cam = new betterCam();
-cam.setViewPos(32,32).setViewSize(1280,720).apply();
+cam.setViewCam(0).setViewPos(32,32).setViewSize(1280,720).apply();
 ```
   
 # Methods
