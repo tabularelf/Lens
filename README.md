@@ -12,6 +12,8 @@ cam = new betterCam();
 cam.setViewPos(32,32).setViewSize(1280,720).apply();
 ```
 On top of this, you get access to a few new methods
+  
+# Methods
 
 ## `.getViewSpeed()`
 
