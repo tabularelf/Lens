@@ -153,6 +153,6 @@ function betterCam(_view = -1) constructor {
 	}
 	
 	static getCameraRect = function() {
-		return [getViewX(), getViewY(), getViewBorderX(), getViewBorderY()];
+		return [getViewX(), getViewY(), getViewX() + getViewWidth(), getViewY() + getViewHeight()];
 	}
 }
