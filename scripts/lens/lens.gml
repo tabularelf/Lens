@@ -169,7 +169,3 @@ function lens(_view = -1) constructor {
     
     self[$ "@@Dispose@@"] = dispose;
 }
-
-function __lensTrace(_string) {
-	show_debug_message("Lens: " + _string);	
-}

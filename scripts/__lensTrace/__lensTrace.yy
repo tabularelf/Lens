@@ -6,7 +6,7 @@
     "path": "folders/Lens.yy",
   },
   "resourceVersion": "1.0",
-  "name": "lens",
+  "name": "__lensTrace",
   "tags": [],
   "resourceType": "GMScript",
 }
