@@ -9,19 +9,19 @@ function lens(_view = -1) constructor {
 	currentView = -1;
 	
 	if (_view != -1) {
-		setViewCam(_view);	
+		setViewCamera(_view);	
 	}
 	
 	static free = function() {
-		setViewCam(-1);
+		setViewCamera(-1);
 		camera_destroy(camID);
 	}
 	
-	static getCamID = function() {
+	static getCameraID = function() {
 		return camID;	
 	}
 	
-	static setViewCam = function(_view) {
+	static setViewCamera = function(_view) {
 		if (currentView != -1) {
 			view_camera[currentView] = -1;	
 		}
