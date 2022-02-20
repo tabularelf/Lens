@@ -1,4 +1,4 @@
-# betterCam
+# Lens
 Camera Constructor wrapper for GameMaker Studio 2.3.2+.
 
 This is just a drop in for most of the `camera_*` functions presented in GameMaker Studio 2 as methods via a constructor, as `.camelCase()`.
@@ -7,8 +7,8 @@ This is just a drop in for most of the `camera_*` functions presented in GameMak
 
 ## Use case:
 ```gml
-// Creates a new betterCam instance. Each instance carries its own cameraID.
-cam = new betterCam();
+// Creates a new Lens instance. Each instance carries its own cameraID.
+cam = new lens();
 cam.setViewCam(0).setViewPos(32,32).setViewSize(1280,720).apply();
 ```
   
@@ -31,3 +31,7 @@ Basically the same as `view_camera[view_num] = camID`. but internally tracks the
 ## `.free()`
 
 Frees the internal cameraID.
+
+## `.getCameraRect()`
+
+Returns an array with ViewX, ViewY, ViewX + ViewW, ViewY + ViewH.
