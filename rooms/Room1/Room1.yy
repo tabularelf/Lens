@@ -46,8 +46,8 @@
     "PhysicsWorldPixToMetres": 0.1,
   },
   "parent": {
-    "name": "bettercam",
-    "path": "bettercam.yyp",
+    "name": "lens",
+    "path": "lens.yyp",
   },
   "resourceVersion": "1.0",
   "name": "Room1",

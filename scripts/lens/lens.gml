@@ -1,7 +1,10 @@
-/// @func betterCam([view_camera])
-/// @param [view_camera]
+#macro LENS_VERSION "1.0.1"
+#macro LENS_CREDITS "TabularElf - https://tabelf.link/"
+show_debug_message("Lens " + LENS_VERSION + " initalized! Created by " + LENS_CREDITS); 
 
-function betterCam(_view = -1) constructor {
+/// @func lens([view_camera])
+/// @param [view_camera]
+function lens(_view = -1) constructor {
 	camID = camera_create();
 	currentView = -1;
 	
@@ -155,4 +158,18 @@ function betterCam(_view = -1) constructor {
 	static getCameraRect = function() {
 		return [getViewX(), getViewY(), getViewX() + getViewWidth(), getViewY() + getViewHeight()];
 	}
+	
+   static dispose = function() {
+        if (camID != -1) {
+            var _id = camID;
+            free();
+        __lensTrace("camID " + string(_id) + " has been garbage collected!");    
+        }
+    }
+    
+    self[$ "@@Dispose@@"] = dispose;
+}
+
+function __lensTrace(_string) {
+	show_debug_message("Lens: " + _string);	
 }

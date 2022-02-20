@@ -1,2 +1,2 @@
-cam = new betterCam(0);
-show_debug_message(cam.currentView);
+cam = new lens(0);
+cam = 0;

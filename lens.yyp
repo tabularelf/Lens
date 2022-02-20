@@ -1,7 +1,7 @@
 {
   "resources": [
     {"id":{"name":"obj_test","path":"objects/obj_test/obj_test.yy",},"order":3,},
-    {"id":{"name":"betterCam","path":"scripts/betterCam/betterCam.yy",},"order":2,},
+    {"id":{"name":"lens","path":"scripts/lens/lens.yy",},"order":2,},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},"order":1,},
   ],
   "Options": [
@@ -39,7 +39,7 @@
     "IDEVersion": "2.3.7.606",
   },
   "resourceVersion": "1.4",
-  "name": "bettercam",
+  "name": "lens",
   "tags": [],
   "resourceType": "GMProject",
 }

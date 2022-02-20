@@ -23,8 +23,8 @@
   "properties": [],
   "overriddenProperties": [],
   "parent": {
-    "name": "bettercam",
-    "path": "bettercam.yyp",
+    "name": "lens",
+    "path": "lens.yyp",
   },
   "resourceVersion": "1.0",
   "name": "obj_test",

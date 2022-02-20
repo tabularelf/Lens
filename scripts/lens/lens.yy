@@ -2,11 +2,11 @@
   "isDnD": false,
   "isCompatibility": false,
   "parent": {
-    "name": "bettercam",
-    "path": "bettercam.yyp",
+    "name": "lens",
+    "path": "lens.yyp",
   },
   "resourceVersion": "1.0",
-  "name": "betterCam",
+  "name": "lens",
   "tags": [],
   "resourceType": "GMScript",
 }
