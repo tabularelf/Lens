@@ -158,14 +158,3 @@ function lens(_view = -1) constructor {
 	static getCameraRect = function() {
 		return [getViewX(), getViewY(), getViewX() + getViewWidth(), getViewY() + getViewHeight()];
 	}
-	
-   static dispose = function() {
-        if (camID != -1) {
-            var _id = camID;
-            free();
-        __lensTrace("camID " + string(_id) + " has been garbage collected!");    
-        }
-    }
-    
-    self[$ "@@Dispose@@"] = dispose;
-}
