@@ -24,7 +24,7 @@ Returns: an array that contains the results from `.getViewSpeedX()` and `.getVie
 
 Returns: CameraID
 
-## `.setViewCam(view_camera)`
+## `.setViewCamera(view_camera)`
 
 Basically the same as `view_camera[view_num] = camID`. but internally tracks the cameraID for when `.free()` is called.
 
