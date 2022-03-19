@@ -158,3 +158,4 @@ function lens(_view = -1) constructor {
 	static getCameraRect = function() {
 		return [getViewX(), getViewY(), getViewX() + getViewWidth(), getViewY() + getViewHeight()];
 	}
+}
