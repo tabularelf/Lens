@@ -1,6 +1,6 @@
-#macro LENS_VERSION "1.0.2"
-#macro LENS_CREDITS "TabularElf - https://tabelf.link/"
-show_debug_message("Lens " + LENS_VERSION + " initalized! Created by " + LENS_CREDITS); 
+#macro __LENS_VERSION "1.0.3"
+#macro __LENS_CREDITS "@TabularElf - https://tabelf.link/"
+show_debug_message("Lens " + __LENS_VERSION + " initalized! Created by " + __LENS_CREDITS); 
 
 /// @func lens([view_camera])
 /// @param [view_camera]
@@ -158,3 +158,4 @@ function lens(_view = -1) constructor {
 	static getCameraRect = function() {
 		return [getViewX(), getViewY(), getViewX() + getViewWidth(), getViewY() + getViewHeight()];
 	}
+}
