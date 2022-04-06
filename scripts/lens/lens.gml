@@ -103,9 +103,23 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	}	
 	
 	static SetViewSize = function(_w, _h) {
-		camera_set_view_size(__camID, _w, _h);
+		__width = _w;
+		__height = _h;
+		camera_set_view_size(__camID, __width, __height);
 		return self;
 	}	
+	
+	static SetViewWidth = function(_w) {
+		__width = _w;	
+		camera_set_view_size(__camID, __width, __height);
+		return self;
+	}
+	
+	static SetViewHeight = function(_w) {
+		__width = _w;	
+		camera_set_view_size(__camID, __width, __height);
+		return self;
+	}
 	
 	static SetViewSpeed = function(_xSpeed, _ySpeed) {
 		__xspeed = _xSpeed;
