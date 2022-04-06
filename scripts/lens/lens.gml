@@ -115,8 +115,8 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 		return self;
 	}
 	
-	static SetViewHeight = function(_w) {
-		__width = _w;	
+	static SetViewHeight = function(_h) {
+		__height = _h;	
 		camera_set_view_size(__camID, __width, __height);
 		return self;
 	}
