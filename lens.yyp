@@ -3,7 +3,6 @@
     {"id":{"name":"obj_test","path":"objects/obj_test/obj_test.yy",},"order":3,},
     {"id":{"name":"Lens","path":"scripts/Lens/Lens.yy",},"order":1,},
     {"id":{"name":"spr_test","path":"sprites/spr_test/spr_test.yy",},"order":6,},
-    {"id":{"name":"__lensTrace","path":"scripts/__lensTrace/__lensTrace.yy",},"order":0,},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},"order":1,},
   ],
   "Options": [
