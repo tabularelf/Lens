@@ -1,2 +1,1 @@
-cam = new lens(0);
-cam = 0;
+cam = new Lens(0);

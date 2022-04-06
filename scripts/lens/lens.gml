@@ -1,161 +1,218 @@
-#macro __LENS_VERSION "1.0.3"
+#macro __LENS_VERSION "1.1.0"
 #macro __LENS_CREDITS "@TabularElf - https://tabelf.link/"
 show_debug_message("Lens " + __LENS_VERSION + " initalized! Created by " + __LENS_CREDITS); 
 
-/// @func lens([view_camera])
+/// @func lens([view_camera], [x], [y], [width], [height])
 /// @param [view_camera]
-function lens(_view = -1) constructor {
-	camID = camera_create();
-	currentView = -1;
+/// @param [x]
+/// @param [y]
+/// @param [width]
+/// @param [height]
+function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_height) constructor {
+	__camID = camera_create();
+	__currentView = -1;
+	__x = _x;
+	__y = _y;
+	__width = _width;
+	__height = _height;
+	__angle = 0;
+	__xspeed = 0;
+	__yspeed = 0;
 	
-	if (_view != -1) {
-		setViewCamera(_view);	
+	// Force visibility
+	if !(view_enabled) {
+		view_enabled = true;	
 	}
 	
-	static free = function() {
-		setViewCamera(-1);
-		camera_destroy(camID);
+	if (_view >= 0) {
+		SetViewCamera(_view);	
 	}
 	
-	static getCameraID = function() {
-		return camID;	
+	SetViewPos(_x, _y);
+	SetViewSize(_width, _height);
+	
+	static Free = function() {
+		SetViewCamera(-1);
+		camera_destroy(__camID);
 	}
 	
-	static setViewCamera = function(_view) {
-		if (currentView != -1) {
-			view_camera[currentView] = -1;	
+	static GetCameraID = function() {
+		return __camID;	
+	}
+	
+	static SetViewCamera = function(_view) {
+		if (__currentView != -1) {
+			view_camera[__currentView] = -1;	
 		}
 		
-		currentView = _view;
-		view_camera[_view] = camID;	
+		__currentView = _view;
+		if (_view >= 0) {
+			view_camera[_view] = __camID;
+			view_visible[_view] = true;
+		}
 		return self;
 	}
 	
-	static apply = function() {
-		camera_apply(camID);	
+	static Apply = function() {
+		camera_apply(__camID);	
 		return self;
 	}
 	
-	static setViewMat = function(_matrix) {
-		camera_set_view_mat(camID, _matrix);
-		return self;
-	}	
-	
-	static setProjMat = function(_matrix) {
-		camera_set_proj_mat(camID, _matrix);
+	static SetViewMat = function(_matrix) {
+		camera_set_view_mat(__camID, _matrix);
 		return self;
 	}	
 	
-	static setUpdateScript = function(_script) {
-		camera_set_update_script(camID, _script);
+	static SetProjMat = function(_matrix) {
+		camera_set_proj_mat(__camID, _matrix);
 		return self;
 	}	
 	
-	static setBeginScript = function(_script) {
-		camera_set_begin_script(camID, _script);
+	static SetUpdateScript = function(_script) {
+		camera_set_update_script(__camID, _script);
 		return self;
 	}	
 	
-	static setEndScript = function(_script) {
-		camera_set_end_script(camID, _script);
+	static SetBeginScript = function(_script) {
+		camera_set_begin_script(__camID, _script);
 		return self;
 	}	
 	
-	static setViewPos = function(_x, _y) {
-		camera_set_view_pos(camID, _x, _y);
+	static SetEndScript = function(_script) {
+		camera_set_end_script(__camID, _script);
 		return self;
 	}	
 	
-	static setViewSize = function(_x, _y) {
-		camera_set_view_size(camID, _x, _y);
+	static SetViewPos = function(_x, _y) {
+		__x = _x;
+		__y = _y;
+		camera_set_view_pos(__camID, _x, _y);
 		return self;
 	}	
 	
-	static setViewSpeed = function(_xSpeed, _ySpeed) {
-		camera_set_view_speed(camID, _xSpeed, _ySpeed);
+	static AddViewX = function(_x) {
+		__x += _x;
+		camera_set_view_pos(__camID, __x, __y);
 		return self;
 	}	
 	
-	static setViewBorder = function(_xBorder, _yBorder) {
-		camera_set_view_border(camID, _xBorder, _yBorder);
+	static AddViewY = function(_y) {
+		__y += _y;
+		camera_set_view_pos(__camID, __x, __y);
 		return self;
 	}	
 	
-	static setViewAngle = function(_angle) {
-		camera_set_view_angle(camID, _angle);
+	static SetViewSize = function(_w, _h) {
+		camera_set_view_size(__camID, _w, _h);
 		return self;
 	}	
 	
-	static setViewTarget = function(_id) {
-		camera_set_view_target(camID, _id);
+	static SetViewSpeed = function(_xSpeed, _ySpeed) {
+		__xspeed = _xSpeed;
+		__yspeed = _ySpeed;
+		camera_set_view_speed(__camID, __xspeed, __yspeed);
+		return self;
+	}	
+	
+	static AddViewXSpeed = function(_xSpeed) {
+		__xspeed = _xSpeed;
+		camera_set_view_speed(__camID, __xspeed, __yspeed);
+		return self;
+	}	
+	
+	static AddViewYSpeed = function(_ySpeed) {
+		__yspeed = _ySpeed;
+		camera_set_view_speed(__camID, __xspeed, __yspeed);
+		return self;
+	}	
+	
+	static SetViewBorder = function(_xBorder, _yBorder) {
+		camera_set_view_border(__camID, _xBorder, _yBorder);
+		return self;
+	}	
+	
+	static SetViewAngle = function(_angle) {
+		__angle = _angle;
+		camera_set_view_angle(__camID, _angle);
+		return self;
+	}	
+	
+	static AddViewAngle = function(_angle) {
+		__angle += _angle;
+		camera_set_view_angle(__camID, __angle);
+		return self;
+	}	
+	
+	static SetViewTarget = function(_id) {
+		camera_set_view_target(__camID, _id);
 		return self;
 	}
 	
-	static getViewMat = function() {
-		return camera_get_view_mat(camID);	
+	static GetViewMat = function() {
+		return camera_get_view_mat(__camID);	
 	}
 	
-	static getProjMat = function() {
-		return camera_get_proj_mat(camID);	
+	static GetProjMat = function() {
+		return camera_get_proj_mat(__camID);	
 	}
 	
-	static getUpdateScript = function() {
-		return camera_get_update_script(camID);	
+	static GetUpdateScript = function() {
+		return camera_get_update_script(__camID);	
 	}
 	
-	static getBeginScript = function() {
-		return camera_get_begin_script(camID);	
+	static GetBeginScript = function() {
+		return camera_get_begin_script(__camID);	
 	}
 	
-	static getEndScript = function() {
-		return camera_get_end_script(camID);	
+	static GetEndScript = function() {
+		return camera_get_end_script(__camID);	
 	}
 	
-	static getViewX = function() {
-		return camera_get_view_x(camID);	
+	static GetViewX = function() {
+		return __x;
 	}
 	
-	static getViewY = function() {
-		return camera_get_view_y(camID);	
+	static GetViewY = function() {
+		return __y;	
 	}
 	
-	static getViewWidth = function() {
-		return camera_get_view_width(camID);	
+	static GetViewWidth = function() {
+		return __width;
 	}
 	
-	static getViewHeight = function() {
-		return camera_get_view_height(camID);	
+	static GetViewHeight = function() {
+		return __height;	
 	}
 	
-	static getViewSpeedX = function() {
-		return camera_get_view_speed_x(camID);	
+	static GetViewSpeedX = function() {
+		return __xspeed;	
 	}
 	
-	static getViewSpeedY = function() {
-		return camera_get_view_speed_y(camID);	
+	static GetViewSpeedY = function() {
+		return __yspeed;	
 	}
 	
-	static getViewSpeed = function() {
-		return [getViewXSpeed(), getViewYSpeed()];
+	static GetViewSpeed = function() {
+		return [GetViewXSpeed(), GetViewYSpeed()];
 	}
 	
-	static getViewBorderX = function() {
-		return camera_get_view_border_x(camID);	
+	static GetViewBorderX = function() {
+		return camera_get_view_border_x(__camID);	
 	}
 	
-	static getViewBorderY = function() {
-		return camera_get_view_border_y(camID);	
+	static GetViewBorderY = function() {
+		return camera_get_view_border_y(__camID);	
 	}
 	
-	static getViewAngle = function() {
-		return camera_get_view_angle(camID);	
+	static GetViewAngle = function() {
+		return __angle;
 	}
 	
-	static getViewTarget = function() {
-		return camera_get_view_target(camID);	
+	static GetViewTarget = function() {
+		return camera_get_view_target(__camID);	
 	}
 	
-	static getCameraRect = function() {
-		return [getViewX(), getViewY(), getViewX() + getViewWidth(), getViewY() + getViewHeight()];
+	static GetCameraRect = function() {
+		return [GetViewX(), GetViewY(), GetViewX() + GetViewWidth(), GetViewY() + GetViewHeight()];
 	}
 }
