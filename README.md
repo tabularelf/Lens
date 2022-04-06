@@ -1,4 +1,4 @@
-# Lens v1.0.2
+# Lens v1.1.0
 Camera Constructor wrapper for GameMaker Studio 2.3.2+.
 
 This is just a drop in for most of the `camera_*` functions presented in GameMaker Studio 2 as methods via a constructor, as `.camelCase()`.
