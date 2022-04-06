@@ -43,6 +43,7 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	static SetViewCamera = function(_view) {
 		if (__currentView != -1) {
 			view_camera[__currentView] = -1;	
+			view_visible[__currentView] = false;
 		}
 		
 		__currentView = _view;
