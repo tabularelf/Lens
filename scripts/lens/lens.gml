@@ -1,4 +1,4 @@
-#macro __LENS_VERSION "1.1.0"
+#macro __LENS_VERSION "1.1.1"
 #macro __LENS_CREDITS "@TabularElf - https://tabelf.link/"
 show_debug_message("Lens " + __LENS_VERSION + " initalized! Created by " + __LENS_CREDITS); 
 
