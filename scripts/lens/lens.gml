@@ -130,13 +130,13 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	}	
 	
 	static AddViewXSpeed = function(_xSpeed) {
-		__xspeed = _xSpeed;
+		__xspeed += _xSpeed;
 		camera_set_view_speed(__camID, __xspeed, __yspeed);
 		return self;
 	}	
 	
 	static AddViewYSpeed = function(_ySpeed) {
-		__yspeed = _ySpeed;
+		__yspeed += _ySpeed;
 		camera_set_view_speed(__camID, __xspeed, __yspeed);
 		return self;
 	}	
@@ -208,7 +208,7 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	}
 	
 	static GetViewSpeed = function() {
-		return [GetViewXSpeed(), GetViewYSpeed()];
+		return [GetViewSpeedX(), GetViewSpeedY()];
 	}
 	
 	static GetViewBorderX = function() {
