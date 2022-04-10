@@ -1,6 +1,7 @@
 {
   "resources": [
     {"id":{"name":"obj_test","path":"objects/obj_test/obj_test.yy",},"order":3,},
+    {"id":{"name":"acShake","path":"animcurves/acShake/acShake.yy",},"order":7,},
     {"id":{"name":"Lens","path":"scripts/Lens/Lens.yy",},"order":1,},
     {"id":{"name":"spr_test","path":"sprites/spr_test/spr_test.yy",},"order":6,},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},"order":1,},
@@ -38,7 +39,7 @@
   ],
   "IncludedFiles": [],
   "MetaData": {
-    "IDEVersion": "2022.3.0.625",
+    "IDEVersion": "2022.300.0.499",
   },
   "resourceVersion": "1.5",
   "name": "lens",

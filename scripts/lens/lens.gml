@@ -1,233 +1,539 @@
-#macro __LENS_VERSION "1.1.1"
+#macro __LENS_VERSION "1.1.0"
 #macro __LENS_CREDITS "@TabularElf - https://tabelf.link/"
 show_debug_message("Lens " + __LENS_VERSION + " initalized! Created by " + __LENS_CREDITS); 
 
-/// @func lens([view_camera], [x], [y], [width], [height])
-/// @param [view_camera]
-/// @param [x]
-/// @param [y]
+global.__lens_event = ds_list_create();
+
+function __lens_check()  {
+	if (!layer_exists("__lyrLens") ) {
+		layer_script_end(layer_create(42, "__lyrLens"), __lens_update);
+		show_debug_message("Layer create");
+	}
+}
+
+function __lens_update() {
+    if (event_type == ev_draw) {
+		if (event_number == 0) {		
+			for (var i=0, _size=ds_list_size(global.__lens_event); i < _size; i++) {
+				var _lens = global.__lens_event[| i];
+		
+				// Exists reference execute event method
+				if (weak_ref_alive(_lens.id) ) {
+					var _ready = _lens.event(_lens.arg0, _lens.arg1, _lens.arg2, _lens.arg3, _lens.arg4, _lens.arg5, _lens.arg6);
+					if (_ready) {
+						ds_list_delete(global.__lens_event, i);
+						_size--;				
+					}
+				}
+				else {	// Clean
+					ds_list_delete(global.__lens_event, i);
+					_size--;
+				}
+			}	
+		}
+	}
+}
+
+/// @param lens_id
+/// @param animation_curve
+/// @param [channel_x]
+/// @param [channel_y]
+/// @param [distance_x]
+/// @param [distance_y]
+/// @param [time]
+/// @param [force]
+function lens_shake(_lens, _anim, _channel_x=0, _channel_y=1, _dist_x=5, _dist_y=5, _time=.5, _force=1) {
+	// Comprobar si existe la función de update
+	__lens_check();
+	
+	if (!_lens.__shake_event) {
+		// Agregar a la lista de eventos
+		ds_list_add(global.__lens_event, {
+			id: weak_ref_create(_lens), event: method(_lens, _lens.__EventShake),
+			arg0: _anim,   arg1: _channel_x, arg2: _channel_y,
+			arg3: _dist_x, arg4: _dist_y,
+			arg5:   _time, arg6:  _force
+		});
+		
+		_lens.__shake_event = true;
+	}
+}
+
+function lens_follow(_lens, _targets, _amount_x, _amount_y, _xdiv=2, _ydiv=2) {
+	// Comprobar si existe la función de update	
+	__lens_check();
+	
+	if (!_lens.__follow_event) {
+		ds_list_add(global.__lens_event, {
+			id: weak_ref_create(_lens), event: method(_lens, _lens.__EventFollow),
+			arg0: _amount_x, arg1: _amount_y,
+			arg2: _xdiv,	 arg3: _ydiv,
+			arg4: undefined, arg5: undefined, arg6: undefined
+		});
+		
+		_lens.__follow_event = true;
+		
+		if (is_array(_targets) ) {
+			_lens.__follow_targets = _targets;
+		}
+		else {
+			_lens.__follow_targets = [_targets];
+		}
+	}
+}
+
+/// @param lens_id
+/// @param animation_curve
+/// @param [channel_x]
+/// @param [channel_y]
+/// @param [focus_x]
+/// @param [focus_y]
+/// @param [time]
+function lens_zoom_target(_lens, _anim, _channel_x=0, _channel_y=0, _fx, _fy, _time) {
+	// Comprobar si existe la función de update	
+	__lens_check();
+	
+	if (!_lens.__zoom_event) {
+		ds_list_add(global.__lens_event, {
+			id: weak_ref_create(_lens), event: method(_lens, _lens.__EventZoomTarget),
+			arg0: _anim,		arg1: _channel_x,
+			arg2: _channel_y,	arg2: _fx,
+			arg3: _fy,			arg4: _time
+		});	
+			
+		_lens.__zoom_event = true;	
+	}
+}
+
+/// @func Lens([view_camera], [x], [y], [width], [height])
+/// @param view_camera
+/// @param x=0
+/// @param y=0
 /// @param [width]
 /// @param [height]
-function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_height) constructor {
-	__camID = camera_create();
-	__currentView = -1;
-	__x = _x;
-	__y = _y;
-	__width = _width;
-	__height = _height;
-	__angle = 0;
+function Lens(_view = -1, _x = 0, _y = 0, _w = room_width, _h = room_height) constructor {
+	#region Private
+	__camera = camera_create();
+	__view   = -1;
+	
 	__xspeed = 0;
 	__yspeed = 0;
 	
-	// Force visibility
-	if !(view_enabled) {
-		view_enabled = true;	
-	}
+	__xborder = 0;
+	__yborder = 0;
 	
-	if (_view >= 0) {
-		SetViewCamera(_view);	
-	}
+	__angle = 0;
 	
-	SetViewPos(_x, _y);
-	SetViewSize(_width, _height);
+	__event = false;
+	
+	#region Shake Event
+	__shake_event = false;
+	__shake_time  = 0;	// The time to end the shake event
+	
+	#endregion
+	
+	#region Follow Event
+	__follow_event = false;
+	__follow_targets = [];
+	
+	#endregion
+	
+	#region Zoom Event
+	__zoom_event = false;
+	__zoom_time = 0;
+	
+	__zoom_force = 1;
+	
+	#endregion
+	
+	#endregion
+	
+	#region Public
+	// Position
+	x = _x;
+	y = _y;
+	
+	// Size
+	w = _w;
+	h = _h;
+	
+	#endregion
+	
+	#region Methods
+	
+	static Apply = function() {
+		camera_apply(__camera);	
+		return self;
+	}
 	
 	static Free = function() {
 		SetViewCamera(-1);
-		camera_destroy(__camID);
+		camera_destroy(__camera);
 	}
 	
-	static GetCameraID = function() {
-		return __camID;	
+	static GetCamera = function() {
+		return __camera;	
 	}
 	
-	static SetViewCamera = function(_view) {
-		if (__currentView <= -1) {
-			view_camera[__currentView] = -1;	
-			view_visible[__currentView] = false;
+	/// @param [view]
+	static SetViewCamera = function(_view=-1) {
+		if (__view <= -1) {
+			view_camera [__view] = -1;	
+			view_visible[__view] = false;
 		}
 		
-		__currentView = _view;
+		__view = _view;
 		if (_view >= 0) {
-			view_camera[_view] = __camID;
+			view_camera [_view] = __camera;
 			view_visible[_view] = true;
 		}
+		
 		return self;
 	}
 	
-	static Apply = function() {
-		camera_apply(__camID);	
-		return self;
-	}
-	
-	static SetViewMat = function(_matrix) {
-		camera_set_view_mat(__camID, _matrix);
+	static SetMat = function(_matrix) {
+		camera_set_view_mat(__camera, _matrix);
 		return self;
 	}	
 	
-	static SetProjMat = function(_matrix) {
-		camera_set_proj_mat(__camID, _matrix);
+	static SetProj = function(_matrix) {
+		camera_set_proj_mat(__camera, _matrix);
+		return self;
+	}	
+
+	static SetBorder = function(_xBorder, _yBorder) {
+		__xborder = _xBorder;
+		__yborder = _yBorder;
+		
+		camera_set_view_border(__camera, __xborder, __yborder);
 		return self;
 	}	
 	
-	static SetUpdateScript = function(_script) {
-		camera_set_update_script(__camID, _script);
-		return self;
-	}	
-	
-	static SetBeginScript = function(_script) {
-		camera_set_begin_script(__camID, _script);
-		return self;
-	}	
-	
-	static SetEndScript = function(_script) {
-		camera_set_end_script(__camID, _script);
-		return self;
-	}	
-	
-	static SetViewPos = function(_x, _y) {
-		__x = _x;
-		__y = _y;
-		camera_set_view_pos(__camID, _x, _y);
-		return self;
-	}	
-	
-	static AddViewX = function(_x) {
-		__x += _x;
-		camera_set_view_pos(__camID, __x, __y);
-		return self;
-	}	
-	
-	static AddViewY = function(_y) {
-		__y += _y;
-		camera_set_view_pos(__camID, __x, __y);
-		return self;
-	}	
-	
-	static SetViewSize = function(_w, _h) {
-		__width = _w;
-		__height = _h;
-		camera_set_view_size(__camID, __width, __height);
-		return self;
-	}	
-	
-	static SetViewWidth = function(_w) {
-		__width = _w;	
-		camera_set_view_size(__camID, __width, __height);
-		return self;
-	}
-	
-	static SetViewHeight = function(_h) {
-		__height = _h;	
-		camera_set_view_size(__camID, __width, __height);
-		return self;
-	}
-	
-	static SetViewSpeed = function(_xSpeed, _ySpeed) {
-		__xspeed = _xSpeed;
-		__yspeed = _ySpeed;
-		camera_set_view_speed(__camID, __xspeed, __yspeed);
-		return self;
-	}	
-	
-	static AddViewXSpeed = function(_xSpeed) {
-		__xspeed += _xSpeed;
-		camera_set_view_speed(__camID, __xspeed, __yspeed);
-		return self;
-	}	
-	
-	static AddViewYSpeed = function(_ySpeed) {
-		__yspeed += _ySpeed;
-		camera_set_view_speed(__camID, __xspeed, __yspeed);
-		return self;
-	}	
-	
-	static SetViewBorder = function(_xBorder, _yBorder) {
-		camera_set_view_border(__camID, _xBorder, _yBorder);
-		return self;
-	}	
-	
-	static SetViewAngle = function(_angle) {
+	/// @param angle
+	static SetAngle = function(_angle) {
 		__angle = _angle;
-		camera_set_view_angle(__camID, _angle);
+		camera_set_view_angle(__camera, _angle);
 		return self;
 	}	
 	
-	static AddViewAngle = function(_angle) {
+	/// @param angle
+	static AddAngle = function(_angle) {
 		__angle += _angle;
-		camera_set_view_angle(__camID, __angle);
+		camera_set_view_angle(__camera, __angle);
 		return self;
 	}	
 	
 	static SetViewTarget = function(_id) {
-		camera_set_view_target(__camID, _id);
+		camera_set_view_target(__camera, _id);
 		return self;
 	}
 	
-	static GetViewMat = function() {
-		return camera_get_view_mat(__camID);	
+		#region Scripts and Events
+	static SetUpdateScript = function(_script) {
+		camera_set_update_script(__camera, _script);
+		return self;
+	}	
+	
+	static SetBeginScript = function(_script) {
+		camera_set_begin_script(__camera, _script);
+		return self;
+	}	
+	
+	static SetEndScript = function(_script) {
+		camera_set_end_script(__camera, _script);
+		return self;
+	}	
+
+	/// @returns {script}
+	static GetUpdateScript = function() {return (camera_get_update_script(__camera) ); }
+	/// @returns {script}
+	static GetBeginScript  = function() {return (camera_get_begin_script(__camera) ); }
+	/// @returns {script}
+	static GetEndScript = function() {return (camera_get_end_script(__camera) ); }
+	
+	/// @param animation_curve
+	/// @param channel_X
+	/// @param channel_y
+	/// @param distance_x
+	/// @param distance_y
+	/// @param time=.5
+	/// @param force=1
+	static __EventShake  = function(_anim, _channel_x, _channel_y, _dist_x, _dist_y, _time, _force=1) { 
+		var _x, _y;
+		
+		_x = _dist_x;
+		_y = _dist_y;
+		
+		__shake_time = lerp(__shake_time, 1, 1 / (_time * game_get_speed(gamespeed_fps) ) );
+		var _chanx = animcurve_get_channel(_anim, _channel_x);	
+		var _chany = animcurve_get_channel(_anim, _channel_y);
+		
+		var _xoff = animcurve_channel_evaluate(_chanx, __shake_time) * _force;
+		var _yoff = animcurve_channel_evaluate(_chany, __shake_time) * _force;
+		
+		_x += clamp(_x, _dist_x, (room_width  - w) - _dist_x) + _xoff; 
+		_y += clamp(_y, _dist_y, (room_height - h) - _dist_y) + _yoff; 
+		
+		AddXY(_x, _y);
+		
+		// less force
+		if (__shake_time >= 1) {
+			__shake_event = false;
+			__shake_time  = 0;
+
+			return true;
+		}
+
+		return false;
+	}
+
+	/// @param [amount_x]
+	/// @param [amount_y]
+	/// @param [div_x]
+	/// @param [div_y]
+	static __EventFollow = function(_amount_x=.5, _amount_y=.5, _xdiv=2, _ydiv=2) {
+		var _camX=x, _camY=y, _x=0, _y=0;
+		
+		var _len = array_length(__follow_targets);
+		var i = 0; repeat(_len) {
+			var in = __follow_targets[i++];
+			
+			if (is_string(in) && in=="mouse") {
+				_x += window_view_mouse_get_x(__view);
+				_y += window_view_mouse_get_y(__view);
+			}
+			else {	// Normal
+				if (instance_exists(in) ) {
+					_x += in.x;
+					_y += in.y;
+				}
+				else array_delete(__follow_targets, i--, 1);
+			}
+		}
+		
+		var _tx = (_x / _len) - (w / _xdiv);
+		var _ty = (_y / _len) - (h / _ydiv);
+		
+		_x = clamp(_tx, 0, room_width  - w);
+		_y = clamp(_ty, 0, room_height - h);
+	
+		_camX = lerp(_camX, _x, _amount_x);
+		_camY = lerp(_camY, _y, _amount_y);
+		
+		show_debug_message(string(_tx) + "," + string(_ty) );
+		
+		SetXY(_camX, _camY);
 	}
 	
-	static GetProjMat = function() {
-		return camera_get_proj_mat(__camID);	
+	static __EventZoomTarget = function(_anim, _channel_x, _channel_y, _fx, _fy, _time) {
+		var _chanx = animcurve_get_channel(_anim, _channel_x);
+		var _chany = animcurve_get_channel(_anim, _channel_y);
+		
+		var _xabs = _fx - x;
+		var _yabs = _fy - y;
+		
+		__zoom_time = lerp(__zoom_time, 1, 1 / _time / game_get_speed(gamespeed_fps) );
+		
+		var _wrel = animcurve_channel_evaluate(_chanx, __zoom_time);
+		var _hrel = animcurve_channel_evaluate(_chany, __zoom_time);
+		 
+		var _xr = _xabs / _wrel;
+		var _yr = _yabs / _hrel;
+		
+		SetSize(w * __zoom_time, h * __zoom_time);
+		
+		// Calculate what the new distance from the target to the origin should be.
+		var _xnew = _wrel * _xr;
+		var _ynew = _hrel * _yr;
+	
+		// Set the origin based on where the object should be.
+		SetXY(_x - _xnew, _y - _ynew);
+		
+		// less force
+		if (__zoom_time >= 1) {
+			__zoom_event = false;
+			__zoom_time  = 0;
+
+			return true;
+		}
+
+		return false;		
 	}
 	
-	static GetUpdateScript = function() {
-		return camera_get_update_script(__camID);	
+	#endregion
+	
+	/// @param x
+	/// @param y
+	static SetXY = function(_x, _y) {
+		x = _x ?? x;
+		y = _y ?? y;
+		camera_set_view_pos(__camera, x, y);
+		
+		return self;
+	}	
+	
+	/// @param x
+	static SetX = function(_x) {
+		x = _x ?? x;
+		camera_set_view_pos(__camera, x, y);
+		return self;
 	}
 	
-	static GetBeginScript = function() {
-		return camera_get_begin_script(__camID);	
+	/// @param y	
+	static SetY = function(_y) { 
+		y = _x ?? y;
+		camera_set_view_pos(__camera, x, y);
+		return self;	
 	}
 	
-	static GetEndScript = function() {
-		return camera_get_end_script(__camID);	
+	/// @param x
+	/// @param y
+	static AddXY = function(_x=0, _y=0) {
+		x += _x;
+		y += _y;
+		camera_set_view_pos(__camera, x, y);
+		return self;
 	}
 	
-	static GetViewX = function() {
-		return __x;
+	/// @param x
+	static AddX = function(_x=0) {
+		x += _x;
+		camera_set_view_pos(__camera, x, y);
+		return self;
+	}	
+	
+	/// @param y
+	static AddY = function(_y=0) {
+		y += _y;
+		camera_set_view_pos(__camera, x, y);
+		return self;
+	}	
+	
+	/// @param [width]
+	/// @param [height]
+	static SetSize = function(_w, _h) {
+		w = _w ?? w;
+		h = _h ?? h;
+		camera_set_view_size(__camera, w, h);
+		return self;
+	}	
+	
+	/// @param width
+	static SetW  = function(_w) {
+		w = _w;	
+		camera_set_view_size(__camera, w, h);
+		return self;
 	}
 	
-	static GetViewY = function() {
-		return __y;	
+	/// @param height
+	static SetH = function(_h) {
+		h = _h;	
+		camera_set_view_size(__camera, w, h);
+		return self;
 	}
 	
-	static GetViewWidth = function() {
-		return __width;
+	/// @param xspeed
+	/// @param yspeed
+	static SetSpeed = function(_x, _y) {
+		__xspeed = _x;
+		__yspeed = _y;
+		camera_set_view_speed(__camera, __xspeed, __yspeed);
+		return self;
+	}	
+	
+	/// @param xspeed
+	static AddSpeedX = function(_x) {
+		__xspeed += _x;
+		camera_set_view_speed(__camera, __xspeed, __yspeed);
+		return self;
+	}	
+
+	/// @param yspeed	
+	static AddSpeedY = function(_y) {
+		__yspeed += _y;
+		camera_set_view_speed(__camera, __xspeed, __yspeed);
+		return self;
+	}	
+	
+		#region Getters
+	static GetMat  = function() {
+		return (camera_get_view_mat(__camera) );	
 	}
 	
-	static GetViewHeight = function() {
-		return __height;	
+	static GetProj = function() {
+		return (camera_get_proj_mat(__camera) );	
 	}
 	
-	static GetViewSpeedX = function() {
-		return __xspeed;	
+	/// @returns {array}
+	static GetXY = function() {return [x, y]; }
+	
+	/// @returns {number}
+	static GetX = function() {return x; }
+	
+	/// @returns {number}
+	static GetY = function() {return y;	}
+	
+	/// @returns {array}
+	static GetSize = function() {return [w, h]; }
+	
+	/// @returns {number}
+	static GetW = function() {return w; }
+	
+	/// @returns {number}
+	static GetH = function() {return h; }
+	
+	static GetSpeedX = function() {return __xspeed;	}
+	
+	static GetSpeedY = function() {return __yspeed;	}
+	
+	/// @returns {array}
+	static GetSpeed = function() {
+		return [GetSpeedX(), GetSpeedY()];
 	}
 	
-	static GetViewSpeedY = function() {
-		return __yspeed;	
+	static GetBorderX = function() {
+		return (camera_get_view_border_x(__camera) );	
 	}
 	
-	static GetViewSpeed = function() {
-		return [GetViewSpeedX(), GetViewSpeedY()];
+	static GetBorderY = function() {
+		return (camera_get_view_border_y(__camera) );	
 	}
 	
-	static GetViewBorderX = function() {
-		return camera_get_view_border_x(__camID);	
-	}
-	
-	static GetViewBorderY = function() {
-		return camera_get_view_border_y(__camID);	
-	}
-	
-	static GetViewAngle = function() {
-		return __angle;
+	/// @returns {number}
+	static GetAngle = function() {
+		return (__angle );
 	}
 	
 	static GetViewTarget = function() {
-		return camera_get_view_target(__camID);	
+		return camera_get_view_target(__camera);	
 	}
 	
-	static GetCameraRect = function() {
-		return [GetViewX(), GetViewY(), GetViewX() + GetViewWidth(), GetViewY() + GetViewHeight()];
+	/// @returns {struct}
+	static GetRect = function() {
+		return {
+			x1: x	 , y1: y,
+			x2: x + w, y2: y + h
+		}
 	}
+	
+	#endregion
+	
+	#endregion
+	
+	#region Start
+	// Force visibility
+	if !(view_enabled) view_enabled = true;	
+	if ((_view >= 0) ) {
+		SetViewCamera(_view);
+	}
+
+	SetXY(_x, _y);
+	SetSize(_w, _h);
+	
+	#endregion
 }
+
+
+
+
+
