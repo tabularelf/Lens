@@ -1,1 +1,1 @@
-cam = new Lens(0,,,320, 240);
+cam = new Lens(0);

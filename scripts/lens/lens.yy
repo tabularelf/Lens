@@ -6,7 +6,7 @@
     "path": "folders/Lens.yy",
   },
   "resourceVersion": "1.0",
-  "name": "lens",
+  "name": "Lens",
   "tags": [],
   "resourceType": "GMScript",
 }
