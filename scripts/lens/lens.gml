@@ -71,6 +71,12 @@ function lens_follow(_lens, _targets, _amount_x, _amount_y, _xdiv=2, _ydiv=2) {
 }
 
 /// @param lens_id
+/// @param instance
+function lens_follow_add(_lens, _instance) {
+	array_push(_lens.__follow_targets, _instance);
+}
+
+/// @param lens_id
 /// @param animation_curve
 /// @param [channel_x]
 /// @param [channel_y]
@@ -115,7 +121,8 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	__shake_time  = 0;	// The time to end the shake event
 
 	// -- follow event
-	__follow_event = false;
+	__follow_event  = false;
+	__follow_enable = true;
 	__follow_targets = [];
 	
 	// -- zoom event
@@ -347,6 +354,9 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	/// @param [div_x]
 	/// @param [div_y]
 	static __EventFollow = function(_amount_x=.5, _amount_y=.5, _xdiv=2, _ydiv=2) {
+		// Disable follow
+		if (!__follow_enable) return true;
+		
 		var _camX=__x, _camY=__y, _x=0, _y=0;
 		
 		var _len = array_length(__follow_targets);
