@@ -4,135 +4,58 @@ show_debug_message("Lens " + __LENS_VERSION + " initalized! Created by " + __LEN
 
 global.__lens_events = [];
 
-/// @desc Need to be called every step in a controller object
-function lens_update() {
-	for (var i=0, len=array_length(global.__lens_events); i<len; i++) {
-		var _lens = global.__lens_events[i];
-		if (weak_ref_alive(_lens.id) ) {
-			var _ready = _lens.event(_lens.arg0, _lens.arg1, _lens.arg2, _lens.arg3, _lens.arg4, _lens.arg5, _lens.arg6);
-			if (_ready) {
-				array_delete(global.__lens_events, i, 1);
-				len--;					
-			}
-		}
-		else {
-			array_delete(global.__lens_events, i, 1);
-			len--;
-		}
-	}
-}
-
-/// @param lens_id
-/// @param animation_curve
-/// @param [channel_x]
-/// @param [channel_y]
-/// @param [distance_x]
-/// @param [distance_y]
-/// @param [time]
-/// @param [force]
-function lens_shake(_lens, _anim, _channel_x=0, _channel_y=1, _dist_x, _dist_y, _time, _force) {
-	if (!_lens.__shake_event) {
-		// Agregar a la lista de eventos
-		array_push(global.__lens_events, {
-			id: weak_ref_create(_lens), event: method(_lens, _lens.__EventShake),
-			arg0: _anim,   arg1: _channel_x, arg2: _channel_y,
-			arg3: _dist_x, arg4: _dist_y,
-			arg5:   _time, arg6:  _force
-		});
-		
-		_lens.__shake_event = true;
-	}
-}
-
-/// @param lens_id
-/// @param targets
-/// @param amount_x
-/// @param amount_y
-/// @param [div_x]
-/// @param [div_y]
-function lens_follow(_lens, _targets, _amount_x, _amount_y, _xdiv=2, _ydiv=2) {
-	if (!_lens.__follow_event) {
-		array_push(global.__lens_events, {
-			id: weak_ref_create(_lens), event: method(_lens, _lens.__EventFollow),
-			arg0: _amount_x, arg1: _amount_y,
-			arg2: _xdiv,	 arg3: _ydiv,
-			arg4: undefined, arg5: undefined, arg6: undefined
-		});
-		
-		_lens.__follow_event = true;
-		
-		if (is_array(_targets) ) {
-			_lens.__follow_targets = _targets;
-		}
-		else {
-			_lens.__follow_targets = [_targets];
-		}
-	}
-}
-
-/// @param lens_id
-/// @param instance
-function lens_follow_add(_lens, _instance) {
-	array_push(_lens.__follow_targets, _instance);
-}
-
-/// @param lens_id
-/// @param animation_curve
-/// @param [channel_x]
-/// @param [channel_y]
-/// @param [focus_x]
-/// @param [focus_y]
-/// @param [time]
-function lens_zoom_target(_lens, _anim, _channel_x=0, _channel_y=1, _fx, _fy, _time) {
-	if (!_lens.__zoom_event) {
-		array_push(global.__lens_events, {
-			id: weak_ref_create(_lens), event: method(_lens, _lens.__EventZoomTarget),
-			arg0: _anim,		arg1: _channel_x,
-			arg2: _channel_y,	arg3: _fx,
-			arg4: _fy,			arg5: _time, arg6: undefined
-		});	
-			
-		_lens.__zoom_event = true;
-		_lens.__zoom_w = _lens. __width;
-		_lens.__zoom_h = _lens.__height;
-	}
-}
-
-/// @func lens([view_camera], [x], [y], [width], [height])
-/// @param [view_camera]
-/// @param [x]
-/// @param [y]
-/// @param [width]
-/// @param [height]
+/// @param [_view]
+/// @param [_x]
+/// @param [_y]
+/// @param [_width]
+/// @param [_height]
+/// @returns {Struct.Lens}
 function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_height) constructor {
 	#region PRIVATE
 	__camID = camera_create();
 	__currentView = -1;
+	
 	__x = _x;
 	__y = _y;
-	__width = _width;
-	__height = _height;
+	__w =  _width;
+	__h = _height;
+	__relation = (__w / __h);
+	
 	__angle = 0;
 	__xspeed = 0;
 	__yspeed = 0;
 	
+	__deltaTime = (delta_time / 1000000) * game_get_speed(gamespeed_fps);
+	
 	// -- shake event
-	__shake_event = false;
-	__shake_time  = 0;	// The time to end the shake event
+	__shakeEvent = false;
+	__shakeTime  = 0;	// The time to end the shake event
 
 	// -- follow event
-	__follow_event  = false;
-	__follow_enable = true;
-	__follow_targets = [];
+	__followEvent  = false;
+	__followEnable = true;
+	__followTargets = [];
+	
+	__followBoundX =  room_width;
+	__followBoundY = room_height;
+	__followBoundUseX = true;
+	__followBoundUseY = true;
+	
+	__followX = 0;
+	__followY = 0;
 	
 	// -- zoom event
-	__zoom_event = false;
-	__zoom_time = 0;
+	__zoomEvent = false;
+	__zoomTime = 0;
 	
-	__zoom_force = 1;
-	__zoom_w =  __width;
-	__zoom_h = __height;
+	__zoomForce = 1;
+	__zoomW = __w;
+	__zoomH = __h;
 	
+	// -- rotate event
+	__rotateEvent = false;
+	__rotateTime  = 0;
+	__rotateAngle = __angle; 
 	
 	#endregion
 
@@ -232,38 +155,33 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	/// @param width	
 	/// @param height
 	static SetViewSize = function(_w, _h=_w) {
-		__width = _w;
-		__height = _h;
-		camera_set_view_size(__camID, __width, __height);
+		__w = _w;
+		__h = _h;
+		__relation = (__w / __h);
+		
+		camera_set_view_size(__camID, __w, __h);
+		
 		return self;
 	}	
 
 	/// @param width	
 	static SetViewW = function(_w) {
-		__width = _w;	
-		camera_set_view_size(__camID, __width, __height);
-		return self;
+		return (SetViewSize(_w, __h) );
 	}
 	
 	/// @param height
 	static SetViewH = function(_h) {
-		__height = _h;	
-		camera_set_view_size(__camID, __width, __height);
-		return self;
+		return (SetViewSize(__w, _h) );
 	}
 	
 	/// @param width
 	static AddViewW = function(_w) {
-		__width += _w;
-		camera_set_view_size(__camID, __width, __height);
-		return self;			
+		return (SetViewSize(__w + _w, __h) );
 	}
 	
 	/// @param height
 	static AddViewH = function(_h) { 
-		__height += _h;
-		camera_set_view_size(__camID, __width, __height);
-		return self;		
+		return (SetViewSize(__w, __h + _h) );
 	}
 	
 	#endregion
@@ -311,35 +229,29 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	
 		#region Events
 	/// @param animation_curve
-	/// @param channel_X
+	/// @param channel_x
 	/// @param channel_y
-	/// @param distance_x
-	/// @param distance_y
-	/// @param time=.5
-	/// @param force=1
-	static __EventShake  = function(_anim, _channel_x, _channel_y, _dist_x=5, _dist_y=5, _time=.5, _force=120) { 
-		var _x = _dist_x;
-		var _y = _dist_y;
+	/// @param amount_x
+	/// @param amount_y
+	/// @param duration
+	static __EventShake  = function(_animCurv, _xChannel=0, _yChannel=1, _xAmount=32, _yAmount=_xAmount, _duration=15) { 
+		__shakeTime = lerp(__shakeTime, 1, 1 / (_duration * __deltaTime) );
+		// Aquiles and the turtle
+		if (__shakeTime >= .9999) __shakeTime = 1;
 		
-		__shake_time = lerp(__shake_time, 1, 1 / (_time * game_get_speed(gamespeed_fps) ) );
-		// Paradoja de tor
-		if (__shake_time >= .9999) __shake_time = 1;
+		var _chanX = animcurve_get_channel(_animCurv, _xChannel);	
+		var _chanY = animcurve_get_channel(_animCurv, _yChannel);
 		
-		var _chanx = animcurve_get_channel(_anim, _channel_x);	
-		var _chany = animcurve_get_channel(_anim, _channel_y);
+		var _shX = animcurve_channel_evaluate(_chanX, __shakeTime) * _xAmount;
+		var _shY = animcurve_channel_evaluate(_chanY, __shakeTime) * _yAmount;
+	
+		// Move view
+		AddViewXY(_shX, _shY);
 		
-		var _xoff = animcurve_channel_evaluate(_chanx, __shake_time);
-		var _yoff = animcurve_channel_evaluate(_chany, __shake_time);
-		
-		_x += _xoff * _force
-		_y += _xoff * _force
-		
-		AddViewXY(_x, _y);
-		
-		// less force
-		if (__shake_time >= 1) {
-			__shake_event = false;
-			__shake_time  = 0;
+		// Ready
+		if (__shakeTime >= 1) {
+			__shakeEvent = false;
+			__shakeTime  = 0;
 			
 			show_debug_message("Shake Ready");
 			
@@ -349,81 +261,150 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 		return false;
 	}
 
-	/// @param [amount_x]
-	/// @param [amount_y]
-	/// @param [div_x]
-	/// @param [div_y]
-	static __EventFollow = function(_amount_x=.5, _amount_y=.5, _xdiv=2, _ydiv=2) {
+		#region Follow Event Simple
+	/// @param amount_x
+	/// @param amount_y
+	/// @param division_x
+	/// @param division_y
+	static __EventFollow = function(_xAmount=.5, _yAmount=_xAmount, _xDivision=2, _yDivision=_xDivision) {
 		// Disable follow
-		if (!__follow_enable) return true;
+		if (!__followEnable) return true;
 		
-		var _camX=__x, _camY=__y, _x=0, _y=0;
+		var _camX = 0;
+		var _camY = 0;
 		
-		var _len = array_length(__follow_targets);
-		var i = 0; repeat(_len) {
-			var in = __follow_targets[i++];
+		__followX = 0;
+		__followY = 0;
+		
+		#region Get Average
+		var len = array_length(__followTargets);
 			
-			if (is_string(in) && in=="mouse") {
-				_x += window_mouse_get_x();
-				_y += window_mouse_get_y();
-			}
-			else {	// Normal
-				if (instance_exists(in) ) {
-					_x += in.x;
-					_y += in.y;
+		var _ww = window_get_width();
+		var _wh = window_get_height();
+		var _mx = window_mouse_get_x();
+		var _my = window_mouse_get_y();
+
+		var _inBorders =    ( _mx < 128)
+						 || ( _mx > _ww - 128)
+						 
+						 || ( _my < 128)
+						 || ( _my > _wh - 128);
+		
+		for (var i=0; i<len; i++) {
+			var ins = __followTargets[i];
+			if (is_string(ins) ) {
+				switch (ins) {
+					case "mouse":
+						if (len == 1) {
+							// Only mouse
+							if (!_inBorders) continue;				
+							var _dir = point_direction(_ww / 2, _wh / 2, _mx, _my);
+
+							__followX += lengthdir_x(32, _dir);
+							__followY += lengthdir_y(32, _dir);						
+						}
+						else {
+							// with other targets
+							__followX = mouse_x - (__w / _xDivision);
+							__followY = mouse_y - (__h / _yDivision);
+						}
+						
+						break;
 				}
-				else array_delete(__follow_targets, i--, 1);
+			}
+			else {
+				if (instance_exists(ins) ) {
+					__followX += ins.x - (__w / _xDivision);
+					__followY += ins.y - (__h / _yDivision);
+				} else {
+					array_delete(__followTargets, i, 1);
+					len--;
+				}
 			}
 		}
 		
-		var _tx = (_x / _len) - (__width  / _xdiv);
-		var _ty = (_y / _len) - (__height / _ydiv);
-		
-		_x = clamp(_tx, 0, room_width  -  __width);
-		_y = clamp(_ty, 0, room_height - __height);
-	
-		_camX = lerp(_camX, _x, _amount_x);
-		_camY = lerp(_camY, _y, _amount_y);
+		__followX /= len;
+		__followY /= len;
 
-		SetViewPos(_camX, _camY);
+		#endregion
+
+		if (__followBoundUseX) __followX = clamp(__followX, 0, __followBoundX - __w);
+		if (__followBoundUseY) __followY = clamp(__followY, 0, __followBoundY - __h);
+
+		_camX = lerp(__x, __followX, _xAmount * __deltaTime);
+		_camY = lerp(__y, __followY, _yAmount * __deltaTime);
+
+		SetViewPos(round(_camX), round(_camY) );
 	}
 
+	/// @param _xBound
+	/// @param _yBound
+	/// @desc Set which limits the Follow event cannot go (default room_width, room_height)
+	static SetFollowBounds = function(_xBound, _yBound) {
+		__followBoundX = _xBound;
+		__followBoundY = _yBound;
+		return self;
+	}
+	
+	/// @param _xBound
+	/// @param _yBound	
+	/// @desc Choose which follow event limits to use (default xBound and yBound) 		
+	static SetFollowBoundsUse = function(_xBound, _yBound) {
+		__followBoundUseX = _xBound;
+		__followBoundUseY = _yBound;
+		return self;
+	}
+	
+	/// @param {Id.Instance} _ins
+	static AddFollowTarget = function() {
+		if (argument_count > 1) {
+			var i=0; repeat(argument_count) AddFollowTarget(argument[i++] );
+		}
+		else {
+			array_push(__followTargets, argument0);
+		}
+		
+		return self;
+	}
+	
+	#endregion
+	
 	/// @param animation_curve
 	/// @param channel_X
 	/// @param channel_y
 	/// @param target_x
 	/// @param target_y
-	/// @param time=.5
-	static __EventZoomTarget = function(_anim, _channel_x, _channel_y, _tx, _ty, _time) {
-		var _chanx = animcurve_get_channel(_anim, _channel_x);
-		var _chany = animcurve_get_channel(_anim, _channel_y);
+	/// @param duration
+	static __EventZoomTarget = function(_animCurv, _xChannel=0, _yChannel=1, _xTarget, _yTarget, _duration=15) {
+		var _chanx = animcurve_get_channel(_animCurv, _xChannel);
+		var _chany = animcurve_get_channel(_animCurv, _yChannel);
 		
-		var _xabs = _tx - __x;
-		var _yabs = _ty - __y;
+		var _xAbs = _xTarget - __x;
+		var _yAbs = _yTarget - __y;
 		
-		__zoom_time = lerp(__zoom_time, 1, 1 / (_time * game_get_speed(gamespeed_fps) ) );
-		// Paradoja de tor
-		if (__zoom_time >= .9999) __zoom_time = 1;
+		__zoomTime = lerp(__zoomTime, 1, 1 / (_duration * __deltaTime) );
+		// Aquiles and the turtle
+		if (__zoomTime >= .9999) __zoomTime = 1;
 		
-		var _newW = __zoom_w * animcurve_channel_evaluate(_chanx, __zoom_time);
-		var _newH = __zoom_h * animcurve_channel_evaluate(_chany, __zoom_time);
+		var _newW = __zoomW * animcurve_channel_evaluate(_chanx, __zoomTime);
+		var _newH = __zoomH * animcurve_channel_evaluate(_chany, __zoomTime);
 		 
-		var _px = _tx /  __width;
-		var _py = _ty / __height;
+		var _px = _xAbs / __w;
+		var _py = _yAbs / __h;
 		
 		SetViewSize(_newW, _newH);
 		
 		// Calculate what the new distance from the target to the origin should be.
-		var _xnew = _px *  __width;
-		var _ynew = _py * __height;
+		var _xNew = _px * __w;
+		var _yNew = _py * __h;
 	
 		// Set the origin based on where the object should be.
-		SetViewPos(_tx - _xnew, _ty - _ynew);
+		SetViewPos(_xTarget - _xNew, _yTarget - _yNew);
 		
 		// less force
-		if (__zoom_time >= 1) {
-			__zoom_event = false;
-			__zoom_time  = 0;
+		if (__zoomTime >= 1) {
+			__zoomEvent = false;
+			__zoomTime  = 0;
 			
 			show_debug_message("Zoom Target Ready");
 			
@@ -433,6 +414,33 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 		return false;		
 	}
 
+	/// @param animation_curve
+	/// @param channel
+	/// @param angleTo
+	/// @param duration
+	static __EventRotate = function(_animCurv, _channel, _angleTo, _duration) {
+		var _chanA = animcurve_get_channel(_animCurv, _channel);
+		__rotateTime = lerp(__rotateTime, 1, 1 / (_duration * __deltaTime) );
+		// Aquiles and the turtle
+		if (__rotateTime >= .9999) __rotateTime = 1;
+		
+		var _inter = animcurve_channel_evaluate(_chanA, __rotateTime);
+		var _angle = __rotateAngle * _inter;
+		
+		SetViewAngle(_angle);
+	
+		if (__rotateTime >= 1) {
+			__rotateEvent = false;
+			__rotateTime = 0;
+			
+			show_debug_message("Rotate ready");
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
 	#endregion
 	
 		#region Get
@@ -506,6 +514,40 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	
 	#endregion
 	
+	/// @return {String}
+	static toString = function() {
+		var _always = "delta: "+ string(__deltaTime) + "\nx: " + string(__x) + "\ny: " + string(__y) + "\nw: " + string(__w) + "\nh: " + string(__h) +
+					  "\nangle: "+ string(__angle);
+		
+		if (__followEvent) {
+			_always +=  
+				"\nfollowBoundX: " + string(__followBoundX) +
+				"\nfollowBoundY: " + string(__followBoundY) + 
+				"\nfollowBoundXUse: " + string(__followBoundUseX) +
+				"\nfollowBoundYUse: " + string(__followBoundUseY) +
+				"\nfollowTargets: "   + string(__followTargets);
+		}
+		
+		if (__shakeEvent) {
+			_always += 
+				"\nshakeTime: " + string(__shakeTime);
+		}
+		
+		if (__zoomEvent) {
+			_always +=
+				"\nzoomTime: "  +  string(__zoomTime) +
+				"\nzoomForce: " + string(__zoomForce) +
+				"\nzoomW: " + string(__zoomW) +
+				"\nzoomH: " + string(__zoomH);
+		}
+		
+		if (__rotateEvent) {
+			_always += "\nrotateTime: " + string(__rotateTime);	
+		}
+		
+		return _always;
+	}
+	
 	#endregion
 
 	// Force visibility
@@ -513,8 +555,13 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	if (_view >= 0) SetViewCamera(_view);
 	
 	SetViewPos(_x, _y);
-	SetViewSize(_width, _height);	
+	SetViewSize(_width, _height);
+	
+	window_center();
 }
+
+
+
 
 
 
