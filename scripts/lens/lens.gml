@@ -2,251 +2,334 @@
 #macro __LENS_CREDITS "@TabularElf - https://tabelf.link/"
 show_debug_message("Lens " + __LENS_VERSION + " initalized! Created by " + __LENS_CREDITS); 
 
+/// @ignore
 global.__lens_events = [];
 
-/// @param [_view]
-/// @param [_x]
-/// @param [_y]
-/// @param [_width]
-/// @param [_height]
+/// @param {Real} [_view]
+/// @param {Real} [_x]
+/// @param {Real} [_y]
+/// @param {Real} [_width]
+/// @param {Real} [_height]
 /// @returns {Struct.Lens}
-function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_height) constructor {
+function Lens(_view=-1, _x=0, _y=0, _width=room_width, _height=room_height) constructor {
 	#region PRIVATE
-	__camID = camera_create();
-	__currentView = -1;
-	
+	/// @ignore
+	__camera = camera_create();
+	/// @ignore
+	__view = -1;
+	/// @ignore
 	__x = _x;
+	/// @ignore
 	__y = _y;
+	/// @ignore
 	__w =  _width;
+	/// @ignore
 	__h = _height;
+	/// @ignore
 	__relation = (__w / __h);
-	
+	/// @ignore
 	__angle = 0;
+	/// @ignore
 	__xspeed = 0;
+	/// @ignore
 	__yspeed = 0;
-	
+	/// @ignore
 	__deltaTime = (delta_time / 1000000) * game_get_speed(gamespeed_fps);
 	
-	// -- shake event
+	#region Shake Event
+	/// @ignore
 	__shakeEvent = false;
+	/// @ignore
 	__shakeTime  = 0;	// The time to end the shake event
 
-	// -- follow event
+	#endregion
+
+	#region Follow Event
+	/// @ignore
 	__followEvent  = false;
+	/// @ignore
 	__followEnable = true;
+	/// @ignore
 	__followTargets = [];
-	
-	__followBoundX =  room_width;
+	/// @ignore
+	__followBoundX = room_width;
+	/// @ignore
 	__followBoundY = room_height;
+	/// @ignore
 	__followBoundUseX = true;
+	/// @ignore
 	__followBoundUseY = true;
-	
+	/// @ignore
 	__followX = 0;
+	/// @ignore
 	__followY = 0;
 	
-	// -- zoom event
-	__zoomEvent = false;
-	__zoomTime = 0;
+	#endregion
 	
+	#region Zoom Event
+	/// @ignore
+	__zoomEvent = false;
+	/// @ignore
+	__zoomTime = 0;
+	/// @ignore
 	__zoomForce = 1;
+	/// @ignore
 	__zoomW = __w;
+	/// @ignore
 	__zoomH = __h;
 	
-	// -- rotate event
+	#endregion
+	
+	#region Rotate Event
+	/// @ignore
 	__rotateEvent = false;
+	/// @ignore
 	__rotateTime  = 0;
+	/// @ignore
 	__rotateAngle = __angle; 
+	
+	#endregion
 	
 	#endregion
 
 	#region METHODS
+	
 	static Free = function() {
 		SetViewCamera(-1);
-		camera_destroy(__camID);
+		camera_destroy(__camera);
 	}
 	
-	/// @returns {camera}
-	static GetCameraID = function() {
-		return __camID;	
+	/// @returns {Id.Camera}
+	static GetCamera = function() {
+		return __camera;	
 	}
 	
-	/// @param view_index
-	static SetViewCamera = function(_view) {
-		if (__currentView <= -1) {
-			view_camera [__currentView] = -1;	
-			view_visible[__currentView] = false;
+	/// @param _view_index
+	/// @returns {Struct.Lens}
+	static SetCamera = function(_view_index) {
+		// Check
+		if (__view <= -1) {
+			view_camera [__view] = -1;	
+			view_visible[__view] = false;
 		}
 		
-		__currentView = _view;
-		if (_view >= 0) {
-			view_camera [_view] = __camID;
-			view_visible[_view] = true;
+		// Set
+		__view = _view_index;
+		if (_view_index >= 0) {
+			view_camera [_view_index] = __camera;
+			view_visible[_view_index] = true;
 		}
+		
 		return self;
 	}
 	
+	/// @returns {Struct.Lens}
 	static Apply = function() {
-		camera_apply(__camID);	
+		camera_apply(__camera);	
 		return self;
 	}
 	
+	/// @param _matrix
+	/// @returns {Struct.Lens}
 	static SetViewMat = function(_matrix) {
-		camera_set_view_mat(__camID, _matrix);
+		camera_set_view_mat(__camera, _matrix);
 		return self;
 	}	
-	
+
+	/// @param _matrix
+	/// @returns {Struct.Lens}
 	static SetProjMat = function(_matrix) {
-		camera_set_proj_mat(__camID, _matrix);
+		camera_set_proj_mat(__camera, _matrix);
 		return self;
 	}	
 	
+	/// @param {Function} _script
+	/// @returns {Struct.Lens}	
 	static SetUpdateScript = function(_script) {
-		camera_set_update_script(__camID, _script);
+		camera_set_update_script(__camera, _script);
 		return self;
 	}	
 	
+	/// @param {Function} _script
+	/// @returns {Struct.Lens}	
 	static SetBeginScript = function(_script) {
-		camera_set_begin_script(__camID, _script);
+		camera_set_begin_script(__camera, _script);
 		return self;
 	}	
 	
+	/// @param {Function} _script
+	/// @returns {Struct.Lens}	
 	static SetEndScript = function(_script) {
-		camera_set_end_script(__camID, _script);
+		camera_set_end_script(__camera, _script);
 		return self;
 	}	
 	
 	#region Position
-	/// @param x
-	/// @param y
-	static SetViewPos = function(_x, _y=_x) {
+	/// @param {Real} _x
+	/// @param {Real} [_y]
+	/// @returns {Struct.Lens}	
+	static SetXY = function(_x, _y=_x) {
 		__x = _x;
 		__y = _y;
-		camera_set_view_pos(__camID, _x, _y);
+		camera_set_view_pos(__camera, _x, _y);
 		return self;
 	}	
 	
-	/// @param x
-	/// @param y
-	static AddViewXY = function(_x, _y=_x) {
+	/// @param {Real} _x
+	/// @param {Real} [_y]
+	/// @returns {Struct.Lens}	
+	static AddXY = function(_x, _y=_x) {
 		__x += _x;
 		__y += _y;
 		
-		camera_set_view_pos(__camID, __x, __y);		
+		camera_set_view_pos(__camera, __x, __y);		
 		return self;
 	}
 	
-	/// @param x
-	static AddViewX = function(_x) {
+	/// @param _x
+	/// @returns {Struct.Lens}	
+	static AddX = function(_x) {
 		__x += _x;
-		camera_set_view_pos(__camID, __x, __y);
+		camera_set_view_pos(__camera, __x, __y);
 		return self;
 	}	
 	
-	/// @param y
-	static AddViewY = function(_y) {
+	/// @param _y
+	/// @returns {Struct.Lens}	
+	static AddY = function(_y) {
 		__y += _y;
-		camera_set_view_pos(__camID, __x, __y);
+		camera_set_view_pos(__camera, __x, __y);
 		return self;
 	}	
 
 	#endregion
 
 	#region Size
-	/// @param width	
-	/// @param height
-	static SetViewSize = function(_w, _h=_w) {
+	/// @param {Real} _w	
+	/// @param {Real} [_h]
+	/// @returns {Struct.Lens}	
+	static SetWH = function(_w, _h=_w) {
 		__w = _w;
 		__h = _h;
 		__relation = (__w / __h);
 		
-		camera_set_view_size(__camID, __w, __h);
+		camera_set_view_size(__camera, __w, __h);
 		
 		return self;
-	}	
-
-	/// @param width	
-	static SetViewW = function(_w) {
+	}
+	
+	/// @param {Real} _w
+	/// @returns {Struct.Lens}	
+	static SetW = function(_w) {
 		return (SetViewSize(_w, __h) );
 	}
 	
-	/// @param height
-	static SetViewH = function(_h) {
+	/// @param {Real} _h
+	/// @returns {Struct.Lens}	
+	static SetH = function(_h) {
 		return (SetViewSize(__w, _h) );
 	}
 	
-	/// @param width
-	static AddViewW = function(_w) {
-		return (SetViewSize(__w + _w, __h) );
+	/// @param {Real} _w
+	/// @param {Real} _h	
+	/// @returns {Struct.Lens}
+	static AddWH = function(_w, _h=_w) {
+		return (SetWH(__w + _w, __h + _h) );
 	}
 	
-	/// @param height
-	static AddViewH = function(_h) { 
-		return (SetViewSize(__w, __h + _h) );
+	/// @param {Real} _w
+	/// @returns {Struct.Lens}
+	static AddW = function(_w) {
+		return (SetWH(__w + _w, __h) );
+	}
+	
+	/// @param {Real} _h
+	/// @returns {Struct.Lens}
+	static AddH = function(_h) { 
+		return (SetWH(__w, __h + _h) );
 	}
 	
 	#endregion
 	
-	static SetViewSpeed = function(_xSpeed, _ySpeed) {
-		__xspeed = _xSpeed;
-		__yspeed = _ySpeed;
-		camera_set_view_speed(__camID, __xspeed, __yspeed);
+	/// @param {Real} _x_speed
+	/// @param {Real} _y_speed
+	/// @returns {Struct.Lens}
+	static SetSpeed = function(_x_speed, _y_speed) {
+		__xspeed = _x_speed;
+		__yspeed = _y_speed;
+		camera_set_view_speed(__camera, __xspeed, __yspeed);
 		return self;
 	}	
-	
-	static AddViewXSpeed = function(_xSpeed) {
-		__xspeed += _xSpeed;
-		camera_set_view_speed(__camID, __xspeed, __yspeed);
+
+	/// @param {Real} _x_speed
+	/// @returns {Struct.Lens}	
+	static AddSpeedX = function(_x_speed) {
+		__xspeed += _x_speed;
+		camera_set_view_speed(__camera, __xspeed, __yspeed);
 		return self;
 	}	
-	
-	static AddViewYSpeed = function(_ySpeed) {
-		__yspeed += _ySpeed;
-		camera_set_view_speed(__camID, __xspeed, __yspeed);
+
+	/// @param {Real} _y_speed
+	/// @returns {Struct.Lens}	
+	static AddSpeedY = function(_y_speed) {
+		__yspeed += _y_speed;
+		camera_set_view_speed(__camera, __xspeed, __yspeed);
 		return self;
 	}	
-	
-	static SetViewBorder = function(_xBorder, _yBorder) {
-		camera_set_view_border(__camID, _xBorder, _yBorder);
+
+	/// @param {Real} _x_border
+	/// @param {Real} _y_border	
+	/// @returns {Struct.Lens}
+	static SetBorder = function(_x_border, _y_border) {
+		camera_set_view_border(__camera, _x_border, _y_border);
 		return self;
 	}	
-	
-	static SetViewAngle = function(_angle) {
+
+	/// @param {Real} _angle
+	/// @returns {Struct.Lens}	
+	static SetAngle = function(_angle) {
 		__angle = _angle;
-		camera_set_view_angle(__camID, _angle);
+		camera_set_view_angle(__camera, _angle);
 		return self;
 	}	
-	
-	static AddViewAngle = function(_angle) {
+
+	/// @param {Real} _angle
+	/// @returns {Struct.Lens}
+	static AddAngle = function(_angle) {
 		__angle += _angle;
-		camera_set_view_angle(__camID, __angle);
+		camera_set_view_angle(__camera, __angle);
 		return self;
 	}	
-	
-	static SetViewTarget = function(_id) {
-		camera_set_view_target(__camID, _id);
+
+	/// @param {Id.Instance} _id
+	/// @returns {Struct.Lens}
+	static SetTarget = function(_id) {
+		camera_set_view_target(__camera, _id);
 		return self;
 	}
 	
 		#region Events
-	/// @param animation_curve
-	/// @param channel_x
-	/// @param channel_y
-	/// @param amount_x
-	/// @param amount_y
-	/// @param duration
-	static __EventShake  = function(_animCurv, _xChannel=0, _yChannel=1, _xAmount=32, _yAmount=_xAmount, _duration=15) { 
+	/// @ignore
+	/// @param _anim_curve
+	/// @param {Real, String} _x_channel
+	/// @param {Real, String} _y_channel
+	/// @param {Real} _x_amount
+	/// @param {Real} _y_amount
+	/// @param {Real} _duration
+	/// @return {Bool}
+	static __EventShake  = function(_anim_curve, _x_channel=0, _y_channel=1, _x_amount=32, _y_amount=_x_amount, _duration=15) { 
 		__shakeTime = lerp(__shakeTime, 1, 1 / (_duration * __deltaTime) );
 		// Aquiles and the turtle
 		if (__shakeTime >= .9999) __shakeTime = 1;
 		
-		var _chanX = animcurve_get_channel(_animCurv, _xChannel);	
-		var _chanY = animcurve_get_channel(_animCurv, _yChannel);
+		var _chanX = animcurve_get_channel(_anim_curve, _x_channel);	
+		var _chanY = animcurve_get_channel(_anim_curve, _y_channel);
 		
-		var _shX = animcurve_channel_evaluate(_chanX, __shakeTime) * _xAmount;
-		var _shY = animcurve_channel_evaluate(_chanY, __shakeTime) * _yAmount;
+		var _shX = animcurve_channel_evaluate(_chanX, __shakeTime) * _x_amount;
+		var _shY = animcurve_channel_evaluate(_chanY, __shakeTime) * _y_amount;
 	
 		// Move view
-		AddViewXY(_shX, _shY);
+		AddXY(_shX, _shY);
 		
 		// Ready
 		if (__shakeTime >= 1) {
@@ -262,11 +345,12 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	}
 
 		#region Follow Event Simple
-	/// @param amount_x
-	/// @param amount_y
-	/// @param division_x
-	/// @param division_y
-	static __EventFollow = function(_xAmount=.5, _yAmount=_xAmount, _xDivision=2, _yDivision=_xDivision) {
+	/// @ignore
+	/// @param {Real} _x_amount
+	/// @param {Real} _y_amount
+	/// @param {Real} _x_division
+	/// @param {Real} _y_division
+	static __EventFollow = function(_x_amount=.5, _y_amount=_x_amount, _x_division=2, _y_division=_x_division) {
 		// Disable follow
 		if (!__followEnable) return true;
 		
@@ -305,8 +389,8 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 						}
 						else {
 							// with other targets
-							__followX = mouse_x - (__w / _xDivision);
-							__followY = mouse_y - (__h / _yDivision);
+							__followX = mouse_x - (__w / _x_division);
+							__followY = mouse_y - (__h / _y_division);
 						}
 						
 						break;
@@ -314,8 +398,8 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 			}
 			else {
 				if (instance_exists(ins) ) {
-					__followX += ins.x - (__w / _xDivision);
-					__followY += ins.y - (__h / _yDivision);
+					__followX += ins.x - (__w / _x_division);
+					__followY += ins.y - (__h / _y_division);
 				} else {
 					array_delete(__followTargets, i, 1);
 					len--;
@@ -331,32 +415,35 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 		if (__followBoundUseX) __followX = clamp(__followX, 0, __followBoundX - __w);
 		if (__followBoundUseY) __followY = clamp(__followY, 0, __followBoundY - __h);
 
-		_camX = lerp(__x, __followX, _xAmount * __deltaTime);
-		_camY = lerp(__y, __followY, _yAmount * __deltaTime);
+		_camX = lerp(__x, __followX, _x_amount * __deltaTime);
+		_camY = lerp(__y, __followY, _y_amount * __deltaTime);
 
-		SetViewPos(round(_camX), round(_camY) );
+		SetXY(round(_camX), round(_camY) );
 	}
 
-	/// @param _xBound
-	/// @param _yBound
+	/// @param {Real} _x_bound
+	/// @param {Real} _y_bound	
 	/// @desc Set which limits the Follow event cannot go (default room_width, room_height)
-	static SetFollowBounds = function(_xBound, _yBound) {
-		__followBoundX = _xBound;
-		__followBoundY = _yBound;
+	/// @returns {Struct.Lens}
+	static SetFollowBounds = function(_x_bound, _y_bound) {
+		__followBoundX = _x_bound;
+		__followBoundY = _y_bound;
 		return self;
 	}
 	
-	/// @param _xBound
-	/// @param _yBound	
-	/// @desc Choose which follow event limits to use (default xBound and yBound) 		
-	static SetFollowBoundsUse = function(_xBound, _yBound) {
-		__followBoundUseX = _xBound;
-		__followBoundUseY = _yBound;
+	/// @param {Real} _x_bound
+	/// @param {Real} _y_bound	
+	/// @desc Choose which follow event limits to use (default __followBoundX and __followBoundY) 		
+	/// @returns {Struct.Lens}
+	static SetFollowBoundsUse = function(_x_bound, _y_bound) {
+		__followBoundUseX = _x_bound;
+		__followBoundUseY = _y_bound;
 		return self;
 	}
 	
-	/// @param {Id.Instance} _ins
-	static AddFollowTarget = function() {
+	/// @param {Id.Instance, String} _ins...
+	/// @returns {Struct.Lens}	
+	static AddFollowTarget = function(_ins) {
 		if (argument_count > 1) {
 			var i=0; repeat(argument_count) AddFollowTarget(argument[i++] );
 		}
@@ -369,18 +456,20 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	
 	#endregion
 	
-	/// @param animation_curve
-	/// @param channel_X
-	/// @param channel_y
-	/// @param target_x
-	/// @param target_y
-	/// @param duration
-	static __EventZoomTarget = function(_animCurv, _xChannel=0, _yChannel=1, _xTarget, _yTarget, _duration=15) {
-		var _chanx = animcurve_get_channel(_animCurv, _xChannel);
-		var _chany = animcurve_get_channel(_animCurv, _yChannel);
+	/// @ignore
+	/// @param _anim_curve
+	/// @param {Real} _x_channel
+	/// @param {Real} _y_channel
+	/// @param {Real} _x_target
+	/// @param {Real} _y_target
+	/// @param {Real} _duration
+	/// @return {Bool}	
+	static __EventZoomTarget = function(_anim_curve, _x_channel=0, _y_channel=1, _x_target, _y_target, _duration=15) {
+		var _chanx = animcurve_get_channel(_anim_curve, _x_channel);
+		var _chany = animcurve_get_channel(_anim_curve, _y_channel);
 		
-		var _xAbs = _xTarget - __x;
-		var _yAbs = _yTarget - __y;
+		var _xAbs = _x_target - __x;
+		var _yAbs = _y_target - __y;
 		
 		__zoomTime = lerp(__zoomTime, 1, 1 / (_duration * __deltaTime) );
 		// Aquiles and the turtle
@@ -392,14 +481,14 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 		var _px = _xAbs / __w;
 		var _py = _yAbs / __h;
 		
-		SetViewSize(_newW, _newH);
+		SetWH(_newW, _newH);
 		
 		// Calculate what the new distance from the target to the origin should be.
 		var _xNew = _px * __w;
 		var _yNew = _py * __h;
 	
 		// Set the origin based on where the object should be.
-		SetViewPos(_xTarget - _xNew, _yTarget - _yNew);
+		SetXY(_x_target - _xNew, _y_target - _yNew);
 		
 		// less force
 		if (__zoomTime >= 1) {
@@ -414,12 +503,14 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 		return false;		
 	}
 
-	/// @param animation_curve
-	/// @param channel
-	/// @param angleTo
-	/// @param duration
-	static __EventRotate = function(_animCurv, _channel, _angleTo, _duration) {
-		var _chanA = animcurve_get_channel(_animCurv, _channel);
+	/// @ignore
+	/// @param _anim_curve
+	/// @param {Real} _channel
+	/// @param {Real} _angle_to
+	/// @param {Real} _duration
+	/// @return {Bool}
+	static __EventRotate = function(_anim_curve, _channel, _angle_to, _duration) {
+		var _chanA = animcurve_get_channel(_anim_curve, _channel);
 		__rotateTime = lerp(__rotateTime, 1, 1 / (_duration * __deltaTime) );
 		// Aquiles and the turtle
 		if (__rotateTime >= .9999) __rotateTime = 1;
@@ -427,7 +518,7 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 		var _inter = animcurve_channel_evaluate(_chanA, __rotateTime);
 		var _angle = __rotateAngle * _inter;
 		
-		SetViewAngle(_angle);
+		SetAngle(_angle);
 	
 		if (__rotateTime >= 1) {
 			__rotateEvent = false;
@@ -445,39 +536,43 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	
 		#region Get
 	static GetViewMat = function() {
-		return camera_get_view_mat(__camID);	
+		return camera_get_view_mat(__camera);	
 	}
 	
 	static GetProjMat = function() {
-		return camera_get_proj_mat(__camID);	
+		return camera_get_proj_mat(__camera);	
 	}
 	
 	static GetUpdateScript = function() {
-		return camera_get_update_script(__camID);	
+		return camera_get_update_script(__camera);	
 	}
 	
 	static GetBeginScript = function() {
-		return camera_get_begin_script(__camID);	
+		return camera_get_begin_script(__camera);	
 	}
 	
 	static GetEndScript = function() {
-		return camera_get_end_script(__camID);	
+		return camera_get_end_script(__camera);	
 	}
 	
-	static GetViewX = function() {
+	/// @return {Real}
+	static GetX = function() {
 		return __x;
 	}
-	
-	static GetViewY = function() {
+
+	/// @return {Real}
+	static GetY = function() {
 		return __y;	
 	}
 	
-	static GetViewWidth = function() {
-		return __width;
+	/// @return {Real}
+	static GetWidth = function() {
+		return __w;
 	}
 	
-	static GetViewHeight = function() {
-		return __height;	
+	/// @return {Real}
+	static GetHight = function() {
+		return __h;	
 	}
 	
 	static GetViewSpeedX = function() {
@@ -493,11 +588,11 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	}
 	
 	static GetViewBorderX = function() {
-		return camera_get_view_border_x(__camID);	
+		return camera_get_view_border_x(__camera);	
 	}
 	
 	static GetViewBorderY = function() {
-		return camera_get_view_border_y(__camID);	
+		return camera_get_view_border_y(__camera);	
 	}
 	
 	static GetViewAngle = function() {
@@ -505,11 +600,17 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	}
 	
 	static GetViewTarget = function() {
-		return camera_get_view_target(__camID);	
+		return camera_get_view_target(__camera);	
 	}
 	
-	static GetCameraRect = function() {
-		return [GetViewX(), GetViewY(), GetViewX() + GetViewWidth(), GetViewY() + GetViewHeight()];
+	/// @return {Array<Real>}
+	static GetRectangle = function() {
+		return [
+			GetX(), 
+			GetY(), 
+			GetX() + GetWidth(), 
+			GetY() + GetHight()
+		];
 	}
 	
 	#endregion
@@ -551,17 +652,44 @@ function Lens(_view = -1, _x = 0, _y = 0, _width = room_width, _height = room_he
 	#endregion
 
 	// Force visibility
-	if !(view_enabled) view_enabled = true;	
-	if (_view >= 0) SetViewCamera(_view);
+	if !(view_enabled) {
+		/// @ignore
+		view_enabled = true;	
+	}
 	
-	SetViewPos(_x, _y);
-	SetViewSize(_width, _height);
+	if (_view >= 0) SetCamera(_view);
+	
+	SetXY(_x, _y);
+	SetWH(_width, _height);
 	
 	window_center();
 }
+	
+/// @ignore
+/// @desc Need to be called every step in a controller object
+global.__lens_update = function() {
+	var _deltaTime = (delta_time / 1000000) * game_get_speed(gamespeed_fps);
+	var _len = array_length(global.__lens_events);
+	
+	for (var i=0; i<_len; i++) {
+		var _event = global.__lens_events[i];
+		
+		// Check
+		if (_event.alive() ) {
+			// Execute Event
+			if (_event.execute(_deltaTime) )  {
+				_event.callback();
+				array_delete(global.__lens_events, i, 1);
+				_len--;
+			}
+		}
+		else {
+			array_delete(global.__lens_events, i, 1);
+			_len--;
+		}
+	}
+}
 
-
-
-
-
-
+/// @ignore
+global.__lens_timesource = time_source_create(time_source_global, 1, time_source_units_frames, global.__lens_update, [], -1);
+time_source_start(global.__lens_timesource);
