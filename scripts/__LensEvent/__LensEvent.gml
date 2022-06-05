@@ -1,45 +1,45 @@
-
-/// @param {Struct.Lens} _lens
-/// @param {Function} _method
-/// @param {Mixed} _arg0
-/// @param {Mixed} _arg1
-/// @param {Mixed} _arg2
-/// @param {Mixed} _arg3
-/// @param {Mixed} _arg4
-/// @param {Mixed} _arg5
-/// @param {Mixed} _arg6
-/// @param {Function} _callback
+/// @param {Struct.Lens}	lens
+/// @param {Function}		method
+/// @param {Array}			arguments
+/// @param {Function}		[end_callback]
+/// @param {Array}			[end_arguments]
 /// @return {Struct.__LensEvent}
-function __LensEvent(_lens, _method, _arg0, _arg1, _arg2, _arg3, _arg4, _arg5, _arg6, _callback) constructor {
+/// @ignore
+function __LensEvent(_lens, _method, _args=[], _callback=function() {}, _callback_args=[]) constructor 
+{
+	#region PRIVATE
 	// Reference
-	id = weak_ref_create(_lens);
+	__lens = weak_ref_create(_lens);
 	// Execute event
-	event = _method;
-	arg0 = _arg0;
-	arg1 = _arg1;
-	arg2 = _arg2;
-	arg3 = _arg3;
-	arg4 = _arg4;
-	arg5 = _arg5;
-	arg6 = _arg6;
-	
+	__event = _method;
+	__args  = _args;
+
 	// Executes a function when the event ends
-	callback = _callback ?? function() {};
+	__callback = _callback;
+	__callback_args = _callback_args;
+	#endregion
 	
 	#region METHOD
 	/// @return {Bool}
 	static alive = function() {
-		return (weak_ref_alive(id) );
+		return (weak_ref_alive(__lens) );
 	}
 	
 	/// @returns {Struct.Lens}
 	static get = function() {
-		return id.ref;	
+		return (__lens.ref);	
 	}
 	
+	/// @return {Mixed}
 	static execute = function(_delta) {
-		get().__deltaTime = _delta 
-		return (event(arg0, arg1, arg2, arg3, arg4, arg5, arg6) );	
+		// Update local delta time.
+		get().__deltaTime = _delta;
+		return (__event(__args) );
+	}
+	
+	/// @return {Mixed}
+	static callback = function() {
+		return (__callback(__callback_args) );
 	}
 	
 	#endregion

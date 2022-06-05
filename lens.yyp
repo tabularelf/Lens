@@ -1,18 +1,19 @@
 {
   "resources": [
     {"id":{"name":"acLensShake","path":"animcurves/acLensShake/acLensShake.yy",},"order":0,},
-    {"id":{"name":"obj_test","path":"objects/obj_test/obj_test.yy",},"order":3,},
+    {"id":{"name":"obj_test","path":"objects/obj_test/obj_test.yy",},"order":1,},
     {"id":{"name":"Lens","path":"scripts/Lens/Lens.yy",},"order":2,},
-    {"id":{"name":"spr_test1","path":"sprites/spr_test1/spr_test1.yy",},"order":4,},
-    {"id":{"name":"spr_test2","path":"sprites/spr_test2/spr_test2.yy",},"order":5,},
+    {"id":{"name":"spr_test1","path":"sprites/spr_test1/spr_test1.yy",},"order":2,},
+    {"id":{"name":"spr_test2","path":"sprites/spr_test2/spr_test2.yy",},"order":3,},
     {"id":{"name":"__LensEvent","path":"scripts/__LensEvent/__LensEvent.yy",},"order":0,},
     {"id":{"name":"lens_shake","path":"scripts/lens_shake/lens_shake.yy",},"order":2,},
     {"id":{"name":"lens_zoom_target","path":"scripts/lens_zoom_target/lens_zoom_target.yy",},"order":4,},
     {"id":{"name":"lens_rotate_to","path":"scripts/lens_rotate_to/lens_rotate_to.yy",},"order":5,},
-    {"id":{"name":"obj_target","path":"objects/obj_target/obj_target.yy",},"order":6,},
+    {"id":{"name":"obj_target","path":"objects/obj_target/obj_target.yy",},"order":4,},
     {"id":{"name":"lens_follow","path":"scripts/lens_follow/lens_follow.yy",},"order":3,},
     {"id":{"name":"acLensZoom","path":"animcurves/acLensZoom/acLensZoom.yy",},"order":1,},
-    {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},"order":0,},
+    {"id":{"name":"__LensConfiguration","path":"scripts/__LensConfiguration/__LensConfiguration.yy",},"order":3,},
+    {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},"order":5,},
   ],
   "Options": [
     {"name":"Amazon Fire","path":"options/amazonfire/options_amazonfire.yy",},
@@ -37,7 +38,7 @@
     {"roomId":{"name":"Room1","path":"rooms/Room1/Room1.yy",},},
   ],
   "Folders": [
-    {"folderPath":"folders/Lens.yy","order":1,"resourceVersion":"1.0","name":"Lens","tags":[],"resourceType":"GMFolder",},
+    {"folderPath":"folders/Lens.yy","order":0,"resourceVersion":"1.0","name":"Lens","tags":[],"resourceType":"GMFolder",},
     {"folderPath":"folders/Lens/Lens Events.yy","order":0,"resourceVersion":"1.0","name":"Lens Events","tags":[],"resourceType":"GMFolder",},
     {"folderPath":"folders/Lens/Lens Animcurves.yy","order":1,"resourceVersion":"1.0","name":"Lens Animcurves","tags":[],"resourceType":"GMFolder",},
   ],

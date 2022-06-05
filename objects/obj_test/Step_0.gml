@@ -1,5 +1,3 @@
-//lens_update();
-
 if keyboard_check(ord("Q")) {
 	cam.AddAngle(-1);	
 }
