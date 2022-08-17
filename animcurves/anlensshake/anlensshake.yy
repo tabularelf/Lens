@@ -25,7 +25,7 @@
     "path": "folders/Lens/Lens Animcurves.yy",
   },
   "resourceVersion": "1.2",
-  "name": "acLensShake",
+  "name": "anLensShake",
   "tags": [],
   "resourceType": "GMAnimCurve",
 }

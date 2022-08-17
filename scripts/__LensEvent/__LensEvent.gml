@@ -1,3 +1,4 @@
+// Feather ignore all
 /// @param {Struct.Lens}	lens
 /// @param {Function}		method
 /// @param {Array}			arguments

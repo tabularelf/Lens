@@ -23,7 +23,7 @@
     "path": "folders/Lens/Lens Animcurves.yy",
   },
   "resourceVersion": "1.2",
-  "name": "acLensZoom",
+  "name": "anLensZoom",
   "tags": [],
   "resourceType": "GMAnimCurve",
 }

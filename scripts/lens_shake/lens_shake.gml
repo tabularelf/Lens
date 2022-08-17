@@ -1,3 +1,4 @@
+// Feather ignore all
 /// @param {Struct.Lens}		lens			Lens Struct
 /// @param {Struct.AnimCurve}	animation_curve	Animation_curve
 /// @param {Real, String}		x_channel		Channel index/name (recommended -1 to 1)
@@ -8,10 +9,10 @@
 function lens_shake(_lens, _animcurv, _xChannel=0, _yChannel=1, _xAmount=32, _yAmount=_xAmount, _duration=15) 
 {
 	// No execute 2 shake events at the same time.
-	if (!_lens.IsShaking() ) {
+	if (!_lens.isShaking() ) {
 		var _event = new __LensEvent(
 			_lens, 
-			method(_lens, _lens.__EventShake), 
+			method(_lens, _lens.__eventShake), 
 			[_animcurv, _xChannel, _yChannel, _xAmount, _yAmount, _duration] 
 		); 
 
